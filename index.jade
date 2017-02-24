@@ -1,0 +1,334 @@
+extends layout
+
+block content
+    div.row
+      div.col-xs-12    
+          div.col-xs-12(style="margin-bottom: 10px;")
+            div.row             
+              div.col-xs-12(style="max-height:90px")                
+                img.img-responsive(src="images/city-of-sanjose_parksrecservices.png", style="max-height:inherit;float:left; margin-right:5px;")
+                h2 Adopt-A-Park
+          div.col-xs-12.text-center
+            div.row
+              div.col-xs-12
+                div.col-xs-7
+                  input(type="text" class="form-control" placeholder="Search by Name" id="searchbox")              
+                  label.checkbox-inline
+                    input(type="checkbox" id="cbox" checked)
+                    | Adopted
+                  label.checkbox-inline
+                    input(type="checkbox" id="cbox1" checked)
+                    | Available
+                div.col-xs-4.pull-left
+                  button.btn.btn-primary(onclick='clearBox();') Clear                
+                  button.btn.btn-primary(onclick='searchByName();') Search
+  
+    div.row
+      div.col-xs-12
+        input(id="pac-input" class="controls" type="text" placeholder="Enter a location" style="margin-top:10px").form-control        
+        div#map.col-sm-12        
+        div#description.col-sm-3.col-xs-12
+          h2(id='pkName')
+          h3(id='address')
+          h3(id='type')
+          h3(id='dist')
+          h3(id='aval')
+          h4(id='url')
+          
+          div.row#request
+            div.col-sm-12.text-center
+              input(type="text" class="form-control" placeholder="Your Name" id="rName")
+              input(type="email" class="form-control" placeholder="Your Email" id="rEmail")
+              input(type="tel" class="form-control" placeholder="Your Tel" id="rTel")
+                     
+              button.btn.btn-primary#submitButton(onclick='submit();') Submit
+              h2#submitText(style="display:none")
+                | Submiting...
+          
+          button.btn.btn-primary.col-xs-offset-1.col-xs-10(onclick='hit(false);' style="margin-top:10px") Close
+    div.row
+      div#detail.col-sm-12
+        h4|For more details on adopting a park, visit:  <a href="http://www.sanjoseca.gov/index.aspx?NID=591">http://www.sanjoseca.gov/index.aspx?NID=591</a>    
+
+    script.
+      var items = !{JSON.stringify(data)};      
+    script
+      :uglify-js(compress=true,mangle=true)
+        var markers = [];
+        var map,addMarker,setMapOnAll, pid,clearBound,resetBound;
+        var icons = {
+          available: {
+            icon: '/images/available.png'
+          },
+          adopted: {
+            icon: '/images/adopted.png'
+          }
+        }
+        
+        $(function() {
+          $("#description").css("display", "none");
+          $('#searchbox').bind('keyup', function(e) {
+            if ( e.keyCode === 13 ) {
+              searchByName();
+            }
+          });
+        });
+        
+        var submit = function(){
+          var a = $('#rName').val(); 
+          var b = $('#rEmail').val(); 
+          var c = $('#rTel').val();
+          if(a&&b&&c){
+            if(!pid){
+              alert('error(11)');
+            }else{
+              $.ajax({
+                url:'/adopt',
+                method: "post",
+                dataType:"json",
+                data: {'pid':pid,'name':a,'email':b,'tel': c},
+                beforeSend:function(){
+                  $('#submitButton').css("display", "none");
+                  $("#submitText").css("display", "inline");                                  
+                },
+                success: function(data){
+                  alert('Thank You. We have recevied your response.');
+                  $('#submitButton').css("display", "inline");
+                  $("#submitText").css("display", "none");                              
+                },
+                error: function(err){
+                  alert(err.responseText); 
+                  $('#submitButton').css("display", "inline");
+                  $("#submitText").css("display", "none");                  
+                },
+                complete:function(err){
+                  $('#rName').val('');
+                  $('#rEmail').val('');
+                  $('#rTel').val('');               
+                }
+              })
+            }            
+          }else{
+            alert('Please filled out your name, email and telephone.');
+          }
+        }
+        
+        var clearBox = function(){
+          //$('#searchbox').val('');
+          location.reload();
+        }
+        
+        var searchByName = function(){
+          var n = $('#searchbox').val();          
+          var adopted = $('#cbox:checked').length>=1?true:false;
+          var available = $('#cbox1:checked').length>=1?true:false;
+          $.ajax({
+            url:'/search',
+            method: "post",
+            dataType:"json",
+            data: {'name':n,'adopted':adopted,'available':available},
+            beforeSend:function(){
+              hit(false); 
+              clearMarkers();
+              clearBound();                      
+            },
+            success: function(data){
+              for(i=0; i < data.doc.length; i++){                  
+                  addMarker(data.doc[i]);
+              }
+              resetBound();
+            }
+          })
+        }
+        
+        var hit = function (a){
+          if(a){
+            $("#map").removeClass('col-sm-12');
+            $("#map").addClass('col-sm-9');
+            $("#map").addClass('hidden-xs');            
+            $("#description").css("display", "inline");            
+          }else{
+            $("#map").removeClass('col-sm-9');
+            $("#map").removeClass('hidden-xs');
+            $("#map").addClass('col-sm-12');
+            $("#description").css("display", "none");
+          }
+        }
+        
+        function clearMarkers() {
+          setMapOnAll(null);
+        }
+        function showMarkers() {
+          setMapOnAll(map);
+        }
+        function deleteMarkers() {
+          clearMarkers();
+          markers = [];
+        }
+        
+        function CenterControl(controlDiv, map) {
+          // Set CSS for the control border.
+          var controlUI = document.createElement('div');
+          controlUI.style.backgroundColor = '#fff';
+          controlUI.style.border = '2px solid #fff';
+          controlUI.style.borderRadius = '3px';
+          controlUI.style.boxShadow = '0 2px 6px rgba(0,0,0,.3)';
+          controlUI.style.cursor = 'pointer';
+          controlUI.style.marginTop = '10px';          
+          controlUI.style.textAlign = 'center';
+          controlUI.title = 'Reset';
+          controlDiv.appendChild(controlUI);
+
+          // Set CSS for the control interior.
+          var controlText = document.createElement('div');
+          controlText.style.color = 'rgb(25,25,25)';
+          controlText.style.fontFamily = 'Roboto,Arial,sans-serif';
+          controlText.style.fontSize = '16px';
+          controlText.style.lineHeight = '30px';
+          controlText.style.paddingLeft = '5px';
+          controlText.style.paddingRight = '5px';
+          controlText.innerHTML = 'Reset';
+          controlUI.appendChild(controlText);
+          // Setup the click event listeners: simply set the map to Chicago.
+          controlUI.addEventListener('click', function() {
+            //map.setZoom(12);
+            resetBound();
+          });
+        }
+
+        function initMap() {
+            var marker, i;
+            var bounds = new google.maps.LatLngBounds();
+            var infowindow = new google.maps.InfoWindow();          
+            
+            map = new google.maps.Map(document.getElementById('map'), {
+                //- center: {lat: 37.337878, lng: -121.886186},
+                maxZoom: 16                
+            });
+            
+            var input = document.getElementById('pac-input');
+            map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+            var autocomplete = new google.maps.places.Autocomplete(input);
+            
+            var centerControlDiv = document.createElement('div');
+            var centerControl = new CenterControl(centerControlDiv, map);            
+            map.controls[google.maps.ControlPosition.TOP_LEFT].push(centerControlDiv);
+            
+            
+            autocomplete.bindTo('bounds', map);
+            
+            var me = new google.maps.Marker({
+              map: map,
+              anchorPoint: new google.maps.Point(0, -29)
+            }); 
+
+            autocomplete.addListener('place_changed', function() {
+              infowindow.close();
+              me.setVisible(false);
+              var place = autocomplete.getPlace();
+              if (!place.geometry) {
+                // User entered the name of a Place that was not suggested and
+                // pressed the Enter key, or the Place Details request failed.
+                window.alert("No details available for input: '" + place.name + "'");
+                return;
+              }
+
+              // If the place has a geometry, then present it on a map.
+            
+              map.setCenter(place.geometry.location);
+              map.setZoom(16); 
+              
+              me.setIcon(({
+                url: place.icon,
+                size: new google.maps.Size(71, 71),
+                origin: new google.maps.Point(0, 0),
+                anchor: new google.maps.Point(17, 34),
+                scaledSize: new google.maps.Size(35, 35)
+              }));
+              me.setPosition(place.geometry.location);
+              me.setVisible(true);
+            });
+            
+            addMarker = function(item) {
+              marker = new google.maps.Marker({
+                  position: new google.maps.LatLng(item['coordinates'][1], item['coordinates'][0]),
+                  map: map,
+                  icon: item.adopted?icons['adopted'].icon:icons['available'].icon
+              });
+              //bounds.extend(marker.getPosition());
+              (function(a){
+                marker.addListener('click', function() {                  
+                  $("#pkName").html(a.name);
+                  if(a.url){
+                    $("#url").html("For more park information:<a href='"+a.url+"' target='_blank'>Website</a>");
+                  }else{
+                    $("#url").html();
+                  }
+                  
+                  if(a.address){
+                    $("#address").html("Address: "+a.address);
+                  }else{
+                    $("#address").html();
+                  }
+                  
+                  if(a.type){
+                    $("#type").html("Type: "+a.type);
+                  }else{
+                    $("#type").html();
+                  }
+                  
+                  if(a.district){
+                    $("#dist").html("Council District: "+a.district);
+                  }else{
+                    $("#dist").html();
+                  }
+                  
+                  if(a.adopted){         
+                    $("#aval").html("Status: Adopted");
+                    $("#request").css("display", "none");
+                  }else{
+                    $("#aval").html("Status: Available");
+                    $("#request").css("display", "inline");
+                    pid = a._id;                    
+                  }             
+                  hit(true);                  
+                })
+              })(item);
+              bounds.extend(marker.getPosition());
+              bindInfoWindow(marker,map,infowindow,item);              
+              markers.push(marker);
+            }
+                        
+            setMapOnAll = function(map) {
+              for (var i = 0; i < markers.length; i++) {
+                markers[i].setMap(map);
+              }                            
+            }
+            
+            for(i=0; i < items.length; i++){
+                addMarker(items[i]);
+            }
+            map.fitBounds(bounds);            
+          
+            $(window).bind('resize', function(){              
+              map.fitBounds(bounds);
+            });
+                        
+            clearBound = function(){
+              bounds = new google.maps.LatLngBounds();
+            }            
+            resetBound = function(){
+              map.fitBounds(bounds);
+            }
+                        
+            function bindInfoWindow(marker, map, infowindow, obj) {
+                google.maps.event.addListener(marker, 'mouseover', function () {                    
+                    infowindow.setContent(obj.name);
+                    infowindow.open(map, marker);
+                });
+                google.maps.event.addListener(marker, 'mouseout', function () {
+                    infowindow.close();
+                });
+            }
+        }
+    script(src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBCnFY-OtovZFwZX_vJtOcYxW2G-iloGoE&callback=initMap&libraries=places" async defer)

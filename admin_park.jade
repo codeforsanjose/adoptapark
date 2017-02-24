@@ -1,0 +1,262 @@
+extends layout
+block heads
+  meta(HTTP-EQUIV="CACHE-CONTROL" CONTENT="NO-CACHE")
+  meta(name="robots" content="noindex")
+    
+block content
+  mixin Panel(docs)
+        -var i = 1;
+        table.text-center(border="1",align="center").table.table-condensed
+          tr
+            th
+              |#            
+            th.pkname
+              |name
+            th.address
+              |address
+            th.pklat-lng
+              |lat
+            th.pklat-lng
+              |lng
+            th.pktype
+              |type  
+            th.pkdist
+              |district
+            th.pkurl
+              |url
+            th
+              |adopted
+            th
+              |remove
+            th
+              |save
+            
+          each doc in docs
+              if i%2==0
+                tr.bk-clr
+                  th
+                    |#{i}                  
+                  th
+                    input(type="text",name=doc._id+'-name', value=doc.name, placeholder="Park Name").pkname
+                  th
+                    input(type="text",name=doc._id+'-address', value=doc.address, placeholder="Address").address
+                  th
+                    input(type="number",name=doc._id+'-lat', value=doc.coordinates[1], placeholder="Lat").pklat-lng
+                  th
+                    input(type="number",name=doc._id+'-lng', value=doc.coordinates[0], placeholder="Lng").pklat-lng             
+                  th
+                    input(type="text",name=doc._id+'-type', value=doc.type, placeholder="Park Type").pktype
+                  th
+                    input(type="number",name=doc._id+'-district', value=doc.district, placeholder="District").pkdist
+                  th
+                    input(type="text",name=doc._id+'-url', value=doc.url, placeholder="Park URL").pkurl        
+                  th
+                    if doc.adopted
+                      input(type="checkbox",name=doc._id+'-adopted', checked)
+                    else
+                      input(type="checkbox",name=doc._id+'-adopted')
+                  th
+                    button.btn.btn-default(onclick='remove("'+doc._id+'")') Remove
+                  th
+                    button.btn.btn-default(onclick='save("'+doc._id+'")') Save
+              else
+                tr              
+                  th
+                    |#{i}                  
+                  th
+                    input(type="text",name=doc._id+'-name', value=doc.name, placeholder="Park Name").pkname
+                  th
+                    input(type="text",name=doc._id+'-address', value=doc.address, placeholder="Address").address
+                  th
+                    input(type="number",name=doc._id+'-lat', value=doc.coordinates[1], placeholder="Lat").pklat-lng
+                  th
+                    input(type="number",name=doc._id+'-lng', value=doc.coordinates[0], placeholder="Lng").pklat-lng             
+                  th
+                    input(type="text",name=doc._id+'-type', value=doc.type, placeholder="Park Type").pktype
+                  th
+                    input(type="number",name=doc._id+'-district', value=doc.district, placeholder="District").pkdist
+                  th
+                    input(type="text",name=doc._id+'-url', value=doc.url, placeholder="Park URL").pkurl
+                  th
+                    if doc.adopted
+                      input(type="checkbox",name=doc._id+'-adopted', checked)
+                    else
+                      input(type="checkbox",name=doc._id+'-adopted')
+                  th
+                    button.btn.btn-default(onclick='remove("'+doc._id+'")') Remove
+                  th
+                    button.btn.btn-default(onclick='save("'+doc._id+'")') Save
+              
+              -i++;
+                    
+                      
+                  
+                    
+    .crm-container
+        .row           
+                h2.text-center Admin Console | Park Data
+                div.row.text-center
+                  div.col-xs-12.col-sm-offset-3.col-sm-6
+                    include links          
+                
+                .col-sm-12.text-center(style="margin-bottom:15px")
+                    table(border="1",align="center").table.table-condensed
+                      tr                            
+                        th.pkname
+                          |name
+                        th.address
+                          |address
+                        th.pklat-lng
+                          |lat
+                        th.pklat-lng
+                          |lng
+                        th.pktype
+                          |type  
+                        th.pkdist
+                          |district
+                        th.pkurl
+                          |url
+                        th
+                          |adopted                           
+                      
+                      tr
+                        th
+                          input(type="text",id='newName', placeholder="Park Name").pkname
+                        th
+                          input(type="text",id='newAddress', placeholder="Address").address
+                        th
+                          input(type="number",id='newLat', placeholder="Lat").pklat-lng
+                        th
+                          input(type="number",id='newLng', placeholder="Lng").pklat-lng
+                        th
+                          input(type="text",id='newType', placeholder="Park Type").pktype
+                        th
+                          input(type="number",id='newDistrict', placeholder="District").pkdist
+                        th
+                          input(type="text",id='newUrl', placeholder="Park URL").pkurl            
+                        th
+                          input(type="checkbox",id='newAdopted')
+                    
+                    button.btn.btn-default(onclick='add()') Add    
+                              
+                .col-sm-12  
+                  #listingPane.text-center
+                      +Panel(data)                  
+                    
+    script
+      :uglify-js(compress=true,mangle=true)
+        function remove(id){
+          $.ajax({
+              type: "POST",
+              url: "/admin/remove/parks",
+              data: JSON.stringify({remove:id}),
+              contentType: "application/json",
+              cache: false,
+              processData: false,
+              success: function (data) {               
+                  reload();
+                  alert('remove successful.');
+              },
+              error: function (err) {                    
+                  alert(err.responseText);
+              }
+          })       
+        }
+      
+        function add(){
+            if(!$('#newName').val()){
+              alert("Require atleast a name.");
+              return;
+            }
+            
+            if((!$('#newLat').val()&&$('#newLat').val())||($('#newLat').val()&&!$('#newLat').val())){
+              alert("Lat and Lng needs to be either both filled or empty.");
+              return;
+            }
+            
+            var d = {
+             newName : $('#newName').val(),
+             newAddress: $('#newAddress').val(),
+             newLat : $('#newLat').val(),
+             newLng : $('#newLng').val(),
+             newType : $('#newType').val(),
+             newDistrict : $('#newDistrict').val(),
+             newUrl : $('#newUrl').val(),
+             newAdopted : $('#newAdopted').is(":checked")
+            }
+            
+          $.ajax({
+              type: "POST",
+              url: "/admin/add/parks",
+              data: JSON.stringify(d),
+              contentType: "application/json",
+              cache: false,
+              processData: false,
+              success: function (data) { 
+                  alert("Add Successful.");                  
+                  reload();
+              },
+              error: function (err) {                    
+                  alert(err.responseText);
+              }
+          })
+        }
+        
+        function save(id){
+          if(!id){
+            alert('No id provided.');
+          }
+          var name = $('input[name='+id+'-name]').val();
+          var address = $('input[name='+id+'-address]').val();
+          var lat = $('input[name='+id+'-lat]').val();
+          var lng = $('input[name='+id+'-lng]').val();
+          var type = $('input[name='+id+'-type]').val();
+          var district = $('input[name='+id+'-district]').val();
+          var url = $('input[name='+id+'-url]').val();
+          var adopted = $('input[name='+id+'-adopted]').is(":checked");
+          
+          if(!name){
+            alert('Cannot save '+id+ 'without a park name.');
+            return;
+          }
+          
+          if(!lat&&lng || lat&&!lng){
+            alert('Lat and Lng needs to be either both filled or empty.');
+            return;       
+          }        
+          
+          var d = {
+           id: id,
+           newName : name,
+           newAddress : address,
+           newLat : lat,
+           newLng : lng,
+           newType : type,
+           newDistrict : district,
+           newUrl : url,
+           newAdopted : adopted
+          }
+          
+          
+          $.ajax({
+              type: "POST",
+              url: "/admin/save/parks",
+              data: JSON.stringify(d),
+              contentType: "application/json",
+              cache: false,
+              processData: false,
+              success: function (data) {                    
+                  //reload();
+                  alert("Edited Successfully.");
+              },
+              error: function (err) {                    
+                  console.error(err)
+              }
+          })
+          
+        }
+        
+        function reload(){
+          location.reload();
+        }
+      

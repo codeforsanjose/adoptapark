@@ -1,0 +1,47 @@
+extends layout
+block heads
+  meta(HTTP-EQUIV="CACHE-CONTROL" CONTENT="NO-CACHE")
+  meta(name="robots" content="noindex")
+    
+block content
+  h2.text-center Admin Console
+  if !logged
+    div.row.text-center
+      div.col-sm-offset-3.col-sm-6.col-xs-offset-1.col-xs-10
+        div.row
+          div.col-xs-12
+            input(type="text", id="un", placeholder="User Name").form-control
+          div.col-xs-12
+            input(type="password", id="pw", placeholder="Password").form-control
+        
+            button.btn.btn-default(onclick='login()') Login
+  else
+    div.row.text-center
+      div.col-xs-12.col-sm-offset-3.col-sm-6
+        include links
+          
+  script
+    :uglify-js(compress=true,mangle=true)
+      var login = function(){        
+        var username = $('#un').val();
+        var password = $('#pw').val();
+        
+        if(!username || !password){
+          alert('Please enter a username and a password.');
+        }
+              
+        $.ajax({
+            type: "POST",
+            url: "/admin/signin",
+            data: JSON.stringify({username:username,password:password}),
+            contentType: "application/json",
+            cache: false,
+            processData: false,
+            success: function (data) {
+                location.reload();
+            },
+            error: function (err) {
+                alert(err.responseText);              
+            }
+        })
+      }

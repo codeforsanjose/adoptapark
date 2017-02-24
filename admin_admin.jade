@@ -1,0 +1,128 @@
+extends layout
+block heads
+  meta(HTTP-EQUIV="CACHE-CONTROL" CONTENT="NO-CACHE")
+  meta(name="robots" content="noindex")
+    
+block content
+  mixin Panel(docs)
+        -var i = 1;
+        table.text-center(border="1",align="center").table.table-condensed
+          tr
+            th
+              |#
+            th
+              |Username
+            th.pkname
+              |remove            
+            
+          each doc in docs
+              if i%2==0
+                tr.bk-clr
+                  th
+                    |#{i}
+                  th
+                    input(type="text",value=doc.username, disabled)                    
+                  th
+                    button.btn.btn-default(onclick='remove("'+doc._id+'")') Remove                  
+              else
+                tr              
+                  th
+                    |#{i}
+                  th
+                    input(type="text",value=doc.username, disabled)                    
+                  th
+                    button.btn.btn-default(onclick='remove("'+doc._id+'")') Remove  
+              
+              -i++;
+                    
+    .crm-container
+        .row           
+                h2.text-center Admin Console | Admins
+                div.row.text-center
+                  div.col-xs-12.col-sm-offset-3.col-sm-6
+                    include links         
+                
+                .col-sm-12.text-center(style="margin-bottom:15px")
+                    table(border="1",align="center").table.table-condensed
+                      tr                            
+                        th.pkname
+                          |Username                        
+                        th
+                          |Password
+                        th
+                          |Verify Password
+                          
+                      tr
+                        th
+                          input(type="text",id='newName', placeholder="Username").pkname
+                        th
+                          input(type="password",id='newPassword', placeholder="Password")
+                        th
+                          input(type="password",id='newPasswordA', placeholder="Password")                                           
+                    button.btn.btn-default(onclick='add()') Add 
+                              
+                .col-sm-12  
+                  #listingPane.text-center
+                      +Panel(data)                  
+                    
+    script
+      :uglify-js(compress=true,mangle=true)
+        function remove(id){
+          $.ajax({
+              type: "POST",
+              url: "/admin/remove/admins",
+              data: JSON.stringify({remove:id}),
+              contentType: "application/json",
+              cache: false,
+              processData: false,
+              success: function (data) {               
+                  reload();
+                  alert('remove successful.');
+              },
+              error: function (err) {                    
+                  alert(err.responseText);
+              }
+          })       
+        }
+      
+        function add(){
+            if(!$('#newName').val()){
+              alert("Require a username.");
+              return;
+            }
+            
+            if(!$('#newPassword').val()){
+              alert("Require a Password.");
+              return;
+            }
+            
+            if($('#newPassword').val() !== $('#newPasswordA').val()){
+              alert("Passwords do not match");
+              return;
+            }
+            
+            var d = {
+             username : $('#newName').val(),             
+             password : $('#newPasswordA').val()
+            }
+            
+          $.ajax({
+              type: "POST",
+              url: "/admin/add/admins",
+              data: JSON.stringify(d),
+              contentType: "application/json",
+              cache: false,
+              processData: false,
+              success: function (data) { 
+                  alert("Add Successful.");                  
+                  reload();
+              },
+              error: function (err) {                    
+                  alert(err.responseText);
+              }
+          })
+        }        
+        function reload(){
+          location.reload();
+        }
+      

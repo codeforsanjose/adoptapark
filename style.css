@@ -1,0 +1,71 @@
+body {
+  padding: 50px;
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+a {
+  color: #00B7FF;
+}
+
+/* Always set the map height explicitly to define the size of the div
+ * element that contains the map. */
+#map {
+  height: calc(100vh - 188px);
+
+}
+/* Optional: Makes the sample page fill the window. */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#pac-input{
+    background-color: #fff;
+    font-family: Roboto;
+    font-size: 15px;
+    font-weight: 300;
+    margin-left: 12px;
+    padding: 0 11px 0 13px;
+    text-overflow: ellipsis;
+    width: 40%;
+  }
+#pac-input:focus {
+  border-color: #4d90fe;
+}
+
+.pac-container {
+  font-family: Roboto;
+}
+
+.bk-clr{
+  background-color: #70db70
+}
+
+.pktype{
+  max-width: 77px;
+}
+
+.pkdist{
+  max-width: 70px;
+}
+
+.pkurl{
+  max-width: 112px;
+}
+
+.pklat-lng{
+  max-width: 155px;
+}
+
+.pkname{
+  max-width: 110px;
+}
+
+.tel{
+  max-width: 96px;
+}
+
+.time{
+  max-width: 164px;
+}

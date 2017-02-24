@@ -1,0 +1,205 @@
+extends layout
+block heads
+  meta(HTTP-EQUIV="CACHE-CONTROL" CONTENT="NO-CACHE")
+  meta(name="robots" content="noindex")
+
+block content
+  mixin Panel(docs,pknms)
+        -var i = 1;
+        table.text-center(border="1",align="center").table.table-condensed
+          tr
+            th
+              |#
+            th
+              |_id
+            th
+              |Park
+            th
+              |Name
+            th
+              |Email
+            th.tel
+              |Tel
+            th.time
+              |Time
+            th
+              |Proc
+            th
+              |Remove
+            th
+              |Save
+            
+          each doc in docs
+              -var tmp = pknms[doc.park_id];
+              if i%2==0
+                tr.bk-clr
+                  th
+                    |#{i}
+                  th
+                    |#{doc._id}
+                  th
+                    |#{tmp}
+                  th
+                    input(type="text",name=doc._id+'-name', value=doc.name, placeholder="Name")
+                  th
+                    input(type="email",name=doc._id+'-email', value=doc.email, placeholder="Email")
+                  th
+                    input(type="text",name=doc._id+'-tel', value=doc.tel, placeholder="Telephone").tel
+                  th
+                    input(type="text",name=doc._id+'-time', value=moment(doc.time).format('lll'), placeholder="Submit Time",disabled).time                      
+                  th
+                    if doc.processed
+                      input(type="checkbox",name=doc._id+'-processed', checked)
+                    else
+                      input(type="checkbox",name=doc._id+'-processed')
+                  th
+                    button.btn.btn-default(onclick='remove("'+doc._id+'")') Remove
+                  th
+                    button.btn.btn-default(onclick='save("'+doc._id+'")') Save
+              else
+                tr              
+                  th
+                    |#{i}
+                  th
+                    |#{doc._id}
+                  th
+                    |#{tmp}                   
+                  th
+                    input(type="text",name=doc._id+'-name', value=doc.name, placeholder="Name")
+                  th
+                    input(type="email",name=doc._id+'-email', value=doc.email, placeholder="Email")
+                  th
+                    input(type="text",name=doc._id+'-tel', value=doc.tel, placeholder="Telephone").tel           
+                  th
+                    input(type="text",name=doc._id+'-time', value=moment(doc.time).format('lll'), placeholder="Submit Time",disabled).time
+                  th
+                    if doc.processed
+                      input(type="checkbox",name=doc._id+'-processed', checked)
+                    else
+                      input(type="checkbox",name=doc._id+'-processed')
+                  th
+                    button.btn.btn-default(onclick='remove("'+doc._id+'")') Remove
+                  th
+                    button.btn.btn-default(onclick='save("'+doc._id+'")') Save
+              
+              -i++; 
+              
+    .crm-container
+        .row
+          h2.text-center Admin Console | Adoption Request
+          div.row.text-center
+            div.col-xs-12.col-sm-offset-3.col-sm-6
+              include links           
+                      
+          .col-sm-12  
+            #listingPane.text-center
+                +Panel(data,pknames)                  
+                    
+    script
+      :uglify-js(compress=true,mangle=true)
+        function remove(id){
+          $.ajax({
+              type: "POST",
+              url: "/admin/remove/adopt",
+              data: JSON.stringify({remove:id}),
+              contentType: "application/json",
+              cache: false,
+              processData: false,
+              success: function (data) {               
+                  reload();
+                  alert('remove successful.');
+              },
+              error: function (err) {                    
+                  alert(err.responseText);
+              }
+          })       
+        }
+        
+        //- function add(){
+        //-     if(!$('#newName').val()){
+        //-       alert("Require atleast a name.");
+        //-       return;
+        //-     }
+        //-     
+        //-     if((!$('#newLat').val()&&$('#newLat').val())||($('#newLat').val()&&!$('#newLat').val())){
+        //-       alert("Lat and Lng needs to be either both filled or empty.");
+        //-       return;
+        //-     }
+        //-     
+        //-     var d = {
+        //-      newName : $('#newName').val(),
+        //-      newLat : $('#newLat').val(),
+        //-      newLng : $('#newLng').val(),
+        //-      newType : $('#newType').val(),
+        //-      newDistrict : $('#newDistrict').val(),
+        //-      newUrl : $('#newUrl').val(),
+        //-      newAdopted : $('#newAdopted').is(":checked")
+        //-     }
+        //-     
+        //-   $.ajax({
+        //-       type: "POST",
+        //-       url: "/add",
+        //-       data: JSON.stringify(d),
+        //-       contentType: "application/json",
+        //-       cache: false,
+        //-       processData: false,
+        //-       success: function (data) { 
+        //-           alert("Add Successful.");                  
+        //-           reload();
+        //-       },
+        //-       error: function (err) {                    
+        //-           alert(err.responseText);
+        //-       }
+        //-   })
+        //- }
+        
+        function save(id){
+          if(!id){
+            alert('No id provided.');
+          }
+          var name = $('input[name='+id+'-name]').val();
+          var email = $('input[name='+id+'-email]').val();
+          var tel = $('input[name='+id+'-tel]').val();          
+          var processed = $('input[name='+id+'-processed]').is(":checked");
+          
+          //- if(!name){
+          //-   alert('Cannot save '+id+ 'without a park name.');
+          //-   return;
+          //- }
+          
+          //- if(!lat&&lng || lat&&!lng){
+          //-   alert('Lat and Lng needs to be either both filled or empty.');
+          //-   return;       
+          //- }        
+          
+          var d = {
+           'id': id,
+           'newName' : name,           
+           'newEmail' : email,
+           'newTel' : tel,
+           'newProcessed' : processed
+          }
+          
+          
+          $.ajax({
+              type: "POST",
+              url: "/admin/save/adopt",
+              data: JSON.stringify(d),
+              contentType: "application/json",
+              cache: false,
+              processData: false,
+              success: function (data) {                    
+                  reload();
+                  alert("Edited Successfully.");
+              },
+              error: function (err) {                    
+                  console.error(err)
+              }
+          })
+          
+        }
+        
+        function reload(){
+          location.reload();
+        }
+      
